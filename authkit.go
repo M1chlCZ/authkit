@@ -1,7 +1,7 @@
 // Package authkit hashes and verifies passwords with Argon2id and derives
 // opaque authentication tokens.
 //
-// Passwords are normalized to NFC and hashed with PHC encoding. Verify
+// Passwords use NFC normalization, and hashes use PHC encoding. Verify
 // reports whether a stored hash must be replaced. VerifyLogin adds dummy work
 // for ineligible or malformed accounts, so response time does not show
 // whether an account exists. Token helpers encode 32 raw bytes as unpadded
@@ -243,7 +243,7 @@ func (hasher *Hasher) Hash(ctx context.Context, password string) (string, error)
 
 // Verify checks a password against a stored PHC hash. The second result is
 // true when the hash matched but does not use the current profile, so the
-// caller should store a new hash.
+// caller can store a new hash.
 func (hasher *Hasher) Verify(ctx context.Context, password, encoded string) (bool, bool, error) {
 	normalized, err := normalizePassword(password)
 	if err != nil {

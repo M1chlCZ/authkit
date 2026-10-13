@@ -1,11 +1,12 @@
-// Package authkit hashes and verifies passwords with Argon2id and derives
-// opaque authentication tokens.
+// Package authkit hashes and verifies passwords with Argon2id, derives opaque
+// authentication tokens, and counts keyed attempts in fixed windows.
 //
 // Passwords use NFC normalization, and hashes use PHC encoding. Verify
 // reports whether a stored hash must be replaced. VerifyLogin adds dummy work
 // for ineligible or malformed accounts, so response time does not show
 // whether an account exists. Token helpers encode 32 raw bytes as unpadded
-// base64url and return the SHA-256 hash for storage.
+// base64url and return the SHA-256 hash for storage. MemoryLimiter bounds the
+// tracked keys, and KeyHash keeps raw identifiers out of the limiter map.
 package authkit
 
 import (
@@ -169,6 +170,17 @@ func DecodeToken(encoded string) ([TokenBytes]byte, [sha256.Size]byte, error) {
 	}
 	copy(raw[:], decoded)
 	return raw, sha256.Sum256(raw[:]), nil
+}
+
+// TokenHash is the SHA-256 digest of a raw token, the form stored by the
+// token helpers.
+type TokenHash [sha256.Size]byte
+
+// HashToken returns the SHA-256 digest of raw. Derive it from the raw token
+// value to find a stored digest without keeping the raw token. For tokens
+// from EncodeToken or NewToken, hash the raw bytes, not the encoded form.
+func HashToken(raw string) TokenHash {
+	return sha256.Sum256([]byte(raw))
 }
 
 // DeriveMailToken returns a purpose-bound token for a UUIDv7 record. The
